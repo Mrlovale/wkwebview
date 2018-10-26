@@ -264,7 +264,37 @@
 }
 
 - (void)setBarButtonItem {
+    self.leftBarButton = [[UIBarButtonItem alloc] initWithCustomView:[self addItemWithImage:@"back_item" imageInset:UIEdgeInsetsMake(0, -10, 0, 10) size:CGSizeMake(28, 28) action:@selector(selectedToBack)]];
+    self.leftBarButtonSecond = [[UIBarButtonItem alloc] initWithCustomView:[self addItemWithImage:@"close_item" imageInset:UIEdgeInsetsMake(0, -15, 0, 15) size:CGSizeMake(28, 28) action:@selector(selectedToClose)]];
     
+    self.navigationItem.leftBarButtonItems = @[self.leftBarButton];
+    self.navigationController.interactivePopGestureRecognizer.delegate = (id)self;
+}
+
+- (UIButton *)addItemWithImage:(NSString *)imageName imageInset:(UIEdgeInsets)inset size:(CGSize)itemSize action:(SEL)action {
+    
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    UIImage *image = [UIImage imageNamed:imageName];
+    button.frame = CGRectMake(0, 0, itemSize.width, itemSize.height);
+    [button setImageEdgeInsets:inset];
+    [button setImage:image forState:UIControlStateNormal];
+    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    button.titleLabel.font = [UIFont systemFontOfSize:16];
+    
+    return button;
+}
+
+#pragma mark - actions
+- (void)selectedToBack {
+    if (self.webView.canGoBack){
+        [self.webView goBack];
+    }else{
+        [self.navigationController popViewControllerAnimated:YES];
+    }
+}
+
+- (void)selectedToClose {
+    [self.navigationController popViewControllerAnimated:YES];
 }
 
 #pragma mark - getter
@@ -296,7 +326,7 @@
 
 - (UIProgressView *)progressView {
     if (!_progressView){
-        _progressView = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 64 + 1, self.view.frame.size.width, 2)];
+        _progressView = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 64, self.view.frame.size.width, 2)];
         _progressView.tintColor = [UIColor blueColor];
         _progressView.trackTintColor = [UIColor clearColor];
     }
