@@ -30,6 +30,13 @@
     //移除注册的js方法
     [[self.webView configuration].userContentController removeScriptMessageHandlerForName:@"jsToOcNoPrams"];
     [[self.webView configuration].userContentController removeScriptMessageHandlerForName:@"jsToOcWithPrams"];
+    //清除UserScript
+    [self.webView.configuration.userContentController removeAllUserScripts];
+    //停止加载
+    [self.webView stopLoading];
+    //清空相关delegate
+    [self.webView setUIDelegate:nil];
+    [self.webView setNavigationDelegate:nil];
     //移除观察者
     [self.webView removeObserver:self forKeyPath:@"estimatedProgress"];
     [self.webView removeObserver:self forKeyPath:@"canGoBack"];
@@ -77,9 +84,7 @@
 
 // 页面加载完成之后调用
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
-    
     [self getCookie];
-    
 }
 
 //提交发生错误时调用
@@ -124,7 +129,7 @@
 
 //进程被终止时调用
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView{
-    
+    [webView reload];
 }
 
 #pragma mark -- WKUIDelegate
@@ -137,22 +142,32 @@
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
-    [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+    if (self && self.isViewLoaded && self.webView && [self.webView superview]){
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            completionHandler();
+        }])];
+        [self presentViewController:alertController animated:YES completion:nil];
+    } else {
         completionHandler();
-    }])];
-    [self presentViewController:alertController animated:YES completion:nil];
+    }
+    
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL result))completionHandler {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
-    [alertController addAction:([UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+    if (self && self.isViewLoaded && self.webView && [self.webView superview]){
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+            completionHandler(NO);
+        }])];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            completionHandler(YES);
+        }])];
+        [self presentViewController:alertController animated:YES completion:nil];
+    } else {
         completionHandler(NO);
-    }])];
-    [alertController addAction:([UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        completionHandler(YES);
-    }])];
-    [self presentViewController:alertController animated:YES completion:nil];
+    }
+    
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt defaultText:(nullable NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSString * _Nullable result))completionHandler {
